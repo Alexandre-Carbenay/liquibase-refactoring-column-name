@@ -1,0 +1,11 @@
+version: '2.1'
+services:
+  postgres:
+    image: postgres:10-alpine
+    ports:
+    - 5432
+  liquibase-refactoring-column-name:
+    container_name: liquibase-refactoring-column-name
+    image: liquibaserefactoringcolumnname:latest
+    ports:
+    - 8080:8080
