@@ -24,3 +24,68 @@ databaseChangeLog:
         - column:
             name: state
             type: char(2)
+- changeSet:
+    id: 1-data
+    author: nvoxland
+    changes:
+    - insert:
+        tableName: person
+        columns:
+        - column:
+            name: firstname
+            value: 'test_firstname'
+        - column:
+            name: lastname
+            value: 'test_lastname'
+        - column:
+            name: state
+            value: 'NY'
+- changeSet:
+    id: 2
+    author: nvoxland
+    changes:
+    - addColumn:
+        tableName: person
+        columns:
+        - column:
+            name: new_firstname
+            type: varchar(50)
+            constraints:
+              nullable: true
+    - sql: UPDATE person SET new_firstname = firstname
+    - addNotNullConstraint:
+        tableName: person
+        columnName: new_firstname
+        columnDataType: varchar(50)
+    - createProcedure:
+        procedureName: duplicate_person_firstname
+        procedureBody: |-
+          CREATE FUNCTION duplicate_person_firstname() RETURNS trigger AS $duplicate_person_firstname$
+            DECLARE
+              oldValueChanged boolean DEFAULT false;
+            BEGIN
+              IF NEW.firstname IS NULL AND NEW.new_firstname IS NULL THEN
+                RAISE EXCEPTION 'person cannot have null firstname and new_firstname';
+              END IF;
+
+              IF (TG_OP = 'UPDATE') THEN
+                IF OLD.firstname <> NEW.firstname THEN
+                  oldValueChanged := true;
+                END IF;
+              ELSIF (TG_OP = 'INSERT') THEN
+                IF NEW.firstname IS NOT NULL THEN
+                  oldValueChanged := true;
+                END IF;
+              END IF;
+
+              IF oldValueChanged THEN
+                NEW.new_firstname := NEW.firstname;
+              ELSE
+                NEW.firstname := NEW.new_firstname;
+              END IF;
+              RETURN NEW;
+            END;
+          $duplicate_person_firstname$ LANGUAGE plpgsql;
+
+          CREATE TRIGGER duplicate_person_firstname BEFORE INSERT OR UPDATE ON person
+            FOR EACH ROW EXECUTE PROCEDURE duplicate_person_firstname();

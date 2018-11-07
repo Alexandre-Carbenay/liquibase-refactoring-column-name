@@ -10,8 +10,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/persons")
-public class PersonController {
+@RequestMapping("/v1/persons")
+public class PersonV1Controller {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
